@@ -7,7 +7,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.provider.CalendarContract;
 import android.text.format.DateFormat;
 import android.widget.RemoteViews;
 
@@ -137,6 +139,20 @@ public class MonthCalendarWidget extends AppWidgetProvider {
                 dayCell.setTextViewText(android.R.id.text1,
                         Integer.toString(selectedCalendar.get(Calendar.DAY_OF_MONTH)));
                 weekRow.addView(R.id.row_container, dayCell);
+
+                if (inMonth) {
+                    Uri.Builder builder = CalendarContract.CONTENT_URI.buildUpon();
+                    builder.appendPath("time");
+                    builder.appendPath(Long.toString(selectedCalendar.getTimeInMillis()));
+                    Intent intent = new Intent(Intent.ACTION_VIEW, builder.build());
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+                    dayCell.setOnClickPendingIntent(android.R.id.text1,
+                            PendingIntent.getActivity(context, 0, intent,
+                                    PendingIntent.FLAG_UPDATE_CURRENT));
+
+                }
+
                 selectedCalendar.add(Calendar.DAY_OF_MONTH, 1);
             }
 

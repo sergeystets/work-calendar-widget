@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/background_today" />
+        </shape>
+    </item>
+    <item>
+        <shape
+            android:shape="ring"
+            android:thickness="1dp"
+            android:innerRadius="13dp"
+            android:useLevel="false">
+
+
+            <solid android:color="@color/foreground_today" />
+        </shape>
+    </item>
+
+</layer-list>
