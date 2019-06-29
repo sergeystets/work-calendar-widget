@@ -5,4 +5,5 @@
         <color name="foreground_today">#111</color>
         <color name="background_today">#fff</color>
         <color name="background_full">#1fff</color>
+        <color name="background_selected_brigade">#60E91E63</color>
 </resources>
