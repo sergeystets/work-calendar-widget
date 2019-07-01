@@ -44,7 +44,7 @@ public class WorkingCalendar {
 
     public Map<LocalDate, WorkingDay> buildScheduleFor(final Pair<LocalDate, LocalDate> period) {
         Validate.notNull(period, "working period can not be null");
-        Validate.notNull(startPoint, "startPoint period can not be null");
+        Validate.notNull(startPoint, "startPoint can not be null");
 
         final LocalDate from = period.getLeft();
         final LocalDate to = period.getRight();
