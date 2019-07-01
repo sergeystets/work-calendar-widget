@@ -31,6 +31,7 @@ import java.util.Map;
 public class MonthCalendarWidget extends AppWidgetProvider {
 
     private static final String SETTINGS_CURRENT_MONTH = "com.google.work.calendar.widget.settings.SELECTED_MONTH";
+    private static final String SETTINGS_WEEKS_STARTS_FROM_MONDAY = "com.google.work.calendar.widget.settings.WEEKS_START_FROM_MONDAY";
     private static final String SETTINGS_CURRENT_YEAR = "com.google.work.calendar.widget.settings.SELECTED_YEAR";
     private static final String ACTION_PREVIOUS_MONTH = "com.google.work.calendar.widget.action.PREVIOUS_MONTH";
     private static final String ACTION_NEXT_MONTH = "com.google.work.calendar.widget.action.NEXT_MONTH";
@@ -63,11 +64,16 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             4, LocalDate.of(2019, Month.JUNE, 9));
 
     private static final EventConverter converter = new EventConverter();
-    private static final boolean weekStartsFromMonday = true;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         super.onUpdate(context, appWidgetManager, appWidgetIds);
+        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
+
+        if (LocaleUtils.getLocaleFor(context).getLanguage().equals("ru")) {
+            settings.edit()
+                    .putBoolean(SETTINGS_WEEKS_STARTS_FROM_MONDAY, true).apply();
+        }
 
         for (int appWidgetId : appWidgetIds) {
             drawWidget(context, appWidgetId);
@@ -152,10 +158,10 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
         // show week days
         RemoteViews rowHeader = new RemoteViews(context.getPackageName(), R.layout.row_header);
-        DateFormatSymbols dfs = DateFormatSymbols.getInstance();
-        String[] weekdayNames = dfs.getShortWeekdays();
-
+        String[] weekdayNames = DateFormatSymbols.getInstance().getShortWeekdays();
+        boolean weekStartsFromMonday = settings.getBoolean(SETTINGS_WEEKS_STARTS_FROM_MONDAY, false);
         int[] weekdays = weekStartsFromMonday ? weekdaysStartingFromMonday : weekdaysStartingFromSunday;
+
         for (int day : weekdays) {
             RemoteViews dayView = new RemoteViews(context.getPackageName(), R.layout.cell_header);
             dayView.setTextViewText(android.R.id.text1, weekdayNames[day]);
@@ -164,7 +170,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         widget.addView(R.id.calendar, rowHeader);
 
         int monthStartDayOfWeek = selectedCalendar.get(Calendar.DAY_OF_WEEK);
-        selectedCalendar.add(Calendar.DAY_OF_MONTH, 2 - monthStartDayOfWeek);
+        selectedCalendar.add(Calendar.DAY_OF_MONTH, weekStartsFromMonday ? 2 : 1 - monthStartDayOfWeek);
 
         Map<LocalDate, WorkingDay> schedule = getSchedule(
                 selectedMonth + 1,
@@ -236,7 +242,6 @@ public class MonthCalendarWidget extends AppWidgetProvider {
                     PendingIntent.getBroadcast(context, 0,
                             intent,
                             PendingIntent.FLAG_UPDATE_CURRENT));
-
 
             widget.addView(R.id.brigade, brigadeCell);
         }
