@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.provider.CalendarContract;
-import android.text.format.DateFormat;
 import android.widget.RemoteViews;
 
 import com.google.common.collect.ImmutableMap;
@@ -25,7 +24,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.text.DateFormatSymbols;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.Map;
 
 public class MonthCalendarWidget extends AppWidgetProvider {
@@ -139,7 +141,13 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         int todayMonth = todayCalendar.get(Calendar.MONTH);
         int todayYear = todayCalendar.get(Calendar.YEAR);
 
-        widget.setTextViewText(R.id.month_label, DateFormat.format("MMMM yyyy", selectedCalendar));
+        LocalDate selectedDate = toLocalDate(selectedCalendar);
+        Locale locale = LocaleUtils.getLocaleFor(context);
+        DateTimeFormatter yearFormatter = DateTimeFormatter.ofPattern("yyyy", locale);
+        widget.setTextViewText(R.id.month_label,
+                selectedDate.getMonth().getDisplayName(TextStyle.FULL_STANDALONE, locale) +
+                        " " +
+                        selectedDate.format(yearFormatter));
 
         // broadcast event when 'previous month' clicked
         widget.setOnClickPendingIntent(R.id.prev_month_button,
@@ -203,7 +211,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
                 String eventName = "";
                 if (workingDay != null) {
-                    eventName = converter.convert(LocaleUtils.getLocaleFor(context), workingDay).getName();
+                    eventName = converter.convert(locale, workingDay).getName();
                 }
 
                 dayCell.setTextViewText(android.R.id.text1,
