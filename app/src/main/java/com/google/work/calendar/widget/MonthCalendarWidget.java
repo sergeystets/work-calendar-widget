@@ -31,12 +31,13 @@ import java.util.Map;
 public class MonthCalendarWidget extends AppWidgetProvider {
 
     private static final String SETTINGS_CURRENT_MONTH = "com.google.work.calendar.widget.settings.SELECTED_MONTH";
-    private static final String SETTINGS_WEEKS_STARTS_FROM_MONDAY = "com.google.work.calendar.widget.settings.WEEKS_START_FROM_MONDAY";
+    private static final String SETTINGS_WEEK_STARTS_FROM_MONDAY = "com.google.work.calendar.widget.settings.WEEK_START_FROM_MONDAY";
     private static final String SETTINGS_CURRENT_YEAR = "com.google.work.calendar.widget.settings.SELECTED_YEAR";
     private static final String ACTION_PREVIOUS_MONTH = "com.google.work.calendar.widget.action.PREVIOUS_MONTH";
     private static final String ACTION_NEXT_MONTH = "com.google.work.calendar.widget.action.NEXT_MONTH";
     private static final String ACTION_SELECT_BRIGADE = "com.google.work.calendar.widget.action.ACTION_SELECT_BRIGADE";
     private static final String SETTINGS_BRIGADE_SELECTED = "com.google.work.calendar.widget.settings.SETTINGS_BRIGADE_SELECTED";
+    private static final String LOCALE_LANGUAGE_RU = "ru";
 
     private static int[] weekdaysStartingFromSunday = new int[]{
             Calendar.SUNDAY,
@@ -70,9 +71,9 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         super.onUpdate(context, appWidgetManager, appWidgetIds);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
-        if (LocaleUtils.getLocaleFor(context).getLanguage().equals("ru")) {
+        if (LocaleUtils.getLocaleFor(context).getLanguage().equals(LOCALE_LANGUAGE_RU)) {
             settings.edit()
-                    .putBoolean(SETTINGS_WEEKS_STARTS_FROM_MONDAY, true).apply();
+                    .putBoolean(SETTINGS_WEEK_STARTS_FROM_MONDAY, true).apply();
         }
 
         for (int appWidgetId : appWidgetIds) {
@@ -159,7 +160,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         // show week days
         RemoteViews rowHeader = new RemoteViews(context.getPackageName(), R.layout.row_header);
         String[] weekdayNames = DateFormatSymbols.getInstance().getShortWeekdays();
-        boolean weekStartsFromMonday = settings.getBoolean(SETTINGS_WEEKS_STARTS_FROM_MONDAY, false);
+        boolean weekStartsFromMonday = settings.getBoolean(SETTINGS_WEEK_STARTS_FROM_MONDAY, false);
         int[] weekdays = weekStartsFromMonday ? weekdaysStartingFromMonday : weekdaysStartingFromSunday;
 
         for (int day : weekdays) {
