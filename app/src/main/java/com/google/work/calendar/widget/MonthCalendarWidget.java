@@ -89,16 +89,16 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
         if (ACTION_PREVIOUS_MONTH.equals(action)) {
-            Calendar calendar = getCurrentMonth(settings);
-            calendar.add(Calendar.MONTH, -1);
+            Calendar month = getDisplayedMonth(settings);
+            month.add(Calendar.MONTH, -1);
             settings.edit()
-                    .putInt(SETTINGS_CURRENT_MONTH, calendar.get(Calendar.MONTH))
-                    .putInt(SETTINGS_CURRENT_YEAR, calendar.get(Calendar.YEAR))
+                    .putInt(SETTINGS_CURRENT_MONTH, month.get(Calendar.MONTH))
+                    .putInt(SETTINGS_CURRENT_YEAR, month.get(Calendar.YEAR))
                     .apply();
             redrawWidgets(context);
 
         } else if (ACTION_NEXT_MONTH.equals(action)) {
-            Calendar calendar = getCurrentMonth(settings);
+            Calendar calendar = getDisplayedMonth(settings);
             calendar.add(Calendar.MONTH, 1);
             settings.edit()
                     .putInt(SETTINGS_CURRENT_MONTH, calendar.get(Calendar.MONTH))
@@ -129,7 +129,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
-        Calendar selectedCalendar = getCurrentMonth(settings);
+        Calendar selectedCalendar = getDisplayedMonth(settings);
         Calendar todayCalendar = Calendar.getInstance();
 
         int selectedMonth = selectedCalendar.get(Calendar.MONTH);
@@ -269,7 +269,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         return new WorkingCalendar(startPoints.get(brigade)).buildScheduleFor(period);
     }
 
-    private static Calendar getCurrentMonth(SharedPreferences settings) {
+    private static Calendar getDisplayedMonth(SharedPreferences settings) {
         Calendar calendar = Calendar.getInstance();
 
         int month = settings.getInt(SETTINGS_CURRENT_MONTH, calendar.get(Calendar.MONTH));
