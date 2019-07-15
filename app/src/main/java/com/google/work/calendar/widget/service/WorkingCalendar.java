@@ -13,14 +13,6 @@ import java.util.Map;
 public class WorkingCalendar {
 
     private static final WorkingDayGenerator[] WORKING_DAY_GENERATORS = new WorkingDayGenerator[]{
-            WorkingDayGenerator.nightShift(),
-            WorkingDayGenerator.nightShift(),
-            WorkingDayGenerator.nightShift(),
-            WorkingDayGenerator.nightShift(),
-
-            WorkingDayGenerator.dayOff(),
-            WorkingDayGenerator.dayOff(),
-
             WorkingDayGenerator.dayShift(),
             WorkingDayGenerator.dayShift(),
             WorkingDayGenerator.dayShift(),
@@ -33,10 +25,18 @@ public class WorkingCalendar {
             WorkingDayGenerator.eveningShift(),
             WorkingDayGenerator.eveningShift(),
 
-            WorkingDayGenerator.dayOff()
+            WorkingDayGenerator.dayOff(),
+
+            WorkingDayGenerator.nightShift(),
+            WorkingDayGenerator.nightShift(),
+            WorkingDayGenerator.nightShift(),
+            WorkingDayGenerator.nightShift(),
+
+            WorkingDayGenerator.dayOff(),
+            WorkingDayGenerator.dayOff(),
     };
 
-    private LocalDate startPoint; // this is the date of the first known night shift
+    private LocalDate startPoint; // this is the date of the first known day shift
 
     public WorkingCalendar(LocalDate startPoint) {
         this.startPoint = startPoint;

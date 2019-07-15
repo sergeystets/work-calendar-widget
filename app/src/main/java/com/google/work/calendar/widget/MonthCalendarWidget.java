@@ -39,7 +39,6 @@ public class MonthCalendarWidget extends AppWidgetProvider {
     private static final String ACTION_NEXT_MONTH = "com.google.work.calendar.widget.action.NEXT_MONTH";
     private static final String ACTION_SELECT_BRIGADE = "com.google.work.calendar.widget.action.ACTION_SELECT_BRIGADE";
     private static final String SETTINGS_BRIGADE_SELECTED = "com.google.work.calendar.widget.settings.SETTINGS_BRIGADE_SELECTED";
-    private static final String LOCALE_LANGUAGE_RU = "ru";
 
     private static int[] weekdaysStartingFromSunday = new int[]{
             Calendar.SUNDAY,
@@ -61,10 +60,10 @@ public class MonthCalendarWidget extends AppWidgetProvider {
     };
 
     private static final Map<Integer, LocalDate> startPoints = ImmutableMap.of(
-            1, LocalDate.of(2019, Month.JUNE, 13),
-            2, LocalDate.of(2019, Month.JUNE, 5),
-            3, LocalDate.of(2019, Month.JUNE, 2),
-            4, LocalDate.of(2019, Month.JUNE, 9));
+            1, LocalDate.of(2019, Month.JULY, 3),
+            2, LocalDate.of(2019, Month.JULY, 11),
+            3, LocalDate.of(2019, Month.JULY, 7),
+            4, LocalDate.of(2019, Month.JULY, 15));
 
     private static final EventConverter converter = new EventConverter();
 
@@ -73,9 +72,8 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         super.onUpdate(context, appWidgetManager, appWidgetIds);
         SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(context);
 
-        if (LocaleUtils.getLocaleFor(context).getLanguage().equals(LOCALE_LANGUAGE_RU)) {
-            settings.edit()
-                    .putBoolean(SETTINGS_WEEK_STARTS_FROM_MONDAY, true).apply();
+        if (LocaleUtils.isRussianLocale(context)) {
+            settings.edit().putBoolean(SETTINGS_WEEK_STARTS_FROM_MONDAY, true).apply();
         }
 
         for (int appWidgetId : appWidgetIds) {
@@ -178,8 +176,11 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         }
         widget.addView(R.id.calendar, rowHeader);
 
+        // reset the calendar to the first day of the visible area on the screen
         int monthStartDayOfWeek = selectedCalendar.get(Calendar.DAY_OF_WEEK);
-        selectedCalendar.add(Calendar.DAY_OF_MONTH, weekStartsFromMonday ? 2 : 1 - monthStartDayOfWeek);
+        selectedCalendar.add(Calendar.DAY_OF_MONTH, weekStartsFromMonday ?
+                2 - monthStartDayOfWeek :
+                1 - monthStartDayOfWeek);
 
         Map<LocalDate, WorkingDay> schedule = getSchedule(
                 selectedMonth + 1,
@@ -236,6 +237,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
             widget.addView(R.id.calendar, weekRow);
         }
+
         // add brigade selector
         widget.removeAllViews(R.id.brigade);
         for (int i = 1; i < 5; i++) {
