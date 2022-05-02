@@ -1,5 +1,7 @@
 package com.google.work.calendar.widget.service;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.work.calendar.widget.dto.WorkShift;
 import com.google.work.calendar.widget.dto.WorkingDay;
 
 import org.apache.commons.lang3.Validate;
@@ -12,7 +14,7 @@ import java.util.Map;
 
 public class WorkingCalendar {
 
-    private static final WorkingDayGenerator[] WORKING_DAY_GENERATORS = new WorkingDayGenerator[]{
+    private static final WorkingDayGenerator[] WORKING_DAY_GENERATORS_8_HOURS = new WorkingDayGenerator[]{
             WorkingDayGenerator.dayShift(),
             WorkingDayGenerator.dayShift(),
             WorkingDayGenerator.dayShift(),
@@ -36,13 +38,24 @@ public class WorkingCalendar {
             WorkingDayGenerator.dayOff(),
     };
 
+    private static final WorkingDayGenerator[] WORKING_DAY_GENERATORS_12_HOURS = new WorkingDayGenerator[]{
+            WorkingDayGenerator.dayShift(),
+            WorkingDayGenerator.nightShift(),
+            WorkingDayGenerator.sleepShift(),
+            WorkingDayGenerator.dayOff(),
+    };
+
+    private static final Map<WorkShift.HoursPerDay, WorkingDayGenerator[]> WORKING_DAY_GENERATORS_BY_TYPE = ImmutableMap.of(
+            WorkShift.HoursPerDay.EIGHT_HOURS, WORKING_DAY_GENERATORS_8_HOURS,
+            WorkShift.HoursPerDay.TWELVE_HOURS, WORKING_DAY_GENERATORS_12_HOURS);
+
     private LocalDate startPoint; // this is the date of the first known day shift
 
     public WorkingCalendar(LocalDate startPoint) {
         this.startPoint = startPoint;
     }
 
-    public Map<LocalDate, WorkingDay> buildScheduleFor(final Pair<LocalDate, LocalDate> period) {
+    public Map<LocalDate, WorkingDay> buildScheduleFor(final Pair<LocalDate, LocalDate> period, WorkShift.HoursPerDay hoursPerDay) {
         Validate.notNull(period, "working period can not be null");
         Validate.notNull(startPoint, "startPoint can not be null");
 
@@ -56,11 +69,12 @@ public class WorkingCalendar {
         int daysCounter = 0;
         LocalDate date = from.minusDays(1);
 
-        int i = findFirstGeneratorFor(from);
+        int i = findFirstGeneratorFor(hoursPerDay, from);
         while (daysCounter < totalDays) {
-            for (; i < WORKING_DAY_GENERATORS.length && daysCounter < totalDays; i++) {
+            WorkingDayGenerator[] workingDayGenerators = getWorkingDayGenerators(hoursPerDay);
+            for (; i < workingDayGenerators.length && daysCounter < totalDays; i++) {
                 date = date.plusDays(1);
-                WorkingDayGenerator workingDayGenerator = WORKING_DAY_GENERATORS[i];
+                WorkingDayGenerator workingDayGenerator = workingDayGenerators[i];
                 schedule.put(date, workingDayGenerator.generate(date));
                 daysCounter++;
             }
@@ -70,17 +84,21 @@ public class WorkingCalendar {
         return schedule;
     }
 
-    private int findFirstGeneratorFor(final LocalDate date) {
+    private WorkingDayGenerator[] getWorkingDayGenerators(WorkShift.HoursPerDay hoursPerDay) {
+        return WORKING_DAY_GENERATORS_BY_TYPE.get(hoursPerDay);
+    }
+
+    private int findFirstGeneratorFor(WorkShift.HoursPerDay hoursPerDay, final LocalDate date) {
         long daysBetween = Math.abs(ChronoUnit.DAYS.between(date, startPoint));
 
         if (startPoint.equals(date)) {
             return 0;
         }
         if (startPoint.isAfter(date)) {
-            int shift = (int) (daysBetween % (WORKING_DAY_GENERATORS.length));
-            return WORKING_DAY_GENERATORS.length - shift;
+            int shift = (int) (daysBetween % (getWorkingDayGenerators(hoursPerDay).length));
+            return getWorkingDayGenerators(hoursPerDay).length - shift;
         } else {
-            return (int) (daysBetween % (WORKING_DAY_GENERATORS.length));
+            return (int) (daysBetween % (getWorkingDayGenerators(hoursPerDay).length));
         }
     }
 }

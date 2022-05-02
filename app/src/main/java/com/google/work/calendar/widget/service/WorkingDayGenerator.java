@@ -17,6 +17,10 @@ public interface WorkingDayGenerator {
         return WorkingDay::day;
     }
 
+    static WorkingDayGenerator sleepShift() {
+        return WorkingDay::sleep;
+    }
+
     static WorkingDayGenerator eveningShift() {
         return WorkingDay::evening;
     }

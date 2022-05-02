@@ -27,4 +27,8 @@ public class WorkingDay {
     public static WorkingDay day(LocalDate date) {
         return WorkingDay.builder().workShift(WorkShift.DAY).date(date).build();
     }
+
+    public static WorkingDay sleep(LocalDate date) {
+        return WorkingDay.builder().workShift(WorkShift.SLEEP).date(date).build();
+    }
 }

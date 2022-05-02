@@ -1,7 +1,5 @@
 package com.google.work.calendar.widget.dto;
 
-import java.time.LocalTime;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -9,15 +7,14 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum WorkShift {
 
-    NIGHT("Ночная смена", "н", LocalTime.of(0, 0), LocalTime.of(8, 0)),
-    DAY("Дневная смена", "д", LocalTime.of(8, 0), LocalTime.of(16, 0)),
-    EVENING("Вечерняя смена", "ч", LocalTime.of(16, 0), LocalTime.of(23, 59)),
-    DAY_OFF("Выходной", "в", LocalTime.of(0, 0), LocalTime.of(23, 59));
+    NIGHT("Ночная смена", "н"),
+    DAY("Дневная смена", "д"),
+    EVENING("Вечерняя смена", "ч"),
+    DAY_OFF("Выходной", "в"),
+    SLEEP("Отсыпной", "o");
 
     private String label;
     private String shortLabel;
-    private LocalTime start;
-    private LocalTime end;
 
     public boolean isNight() {
         return this == NIGHT;
@@ -33,5 +30,27 @@ public enum WorkShift {
 
     public boolean isDayOff() {
         return this == DAY_OFF;
+    }
+
+
+    @Getter
+    public enum HoursPerDay {
+        EIGHT_HOURS(8),
+        TWELVE_HOURS(12);
+
+        private int hours;
+
+        HoursPerDay(int hours) {
+            this.hours = hours;
+        }
+
+        public static HoursPerDay fromHours(int hours) {
+            if (hours == 8) {
+                return EIGHT_HOURS;
+            } else {
+                return TWELVE_HOURS;
+            }
+        }
+
     }
 }

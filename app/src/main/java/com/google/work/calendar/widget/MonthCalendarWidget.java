@@ -14,6 +14,7 @@ import android.widget.RemoteViews;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.work.calendar.widget.converter.EventConverter;
+import com.google.work.calendar.widget.dto.WorkShift;
 import com.google.work.calendar.widget.dto.WorkingDay;
 import com.google.work.calendar.widget.service.WorkingCalendar;
 import com.google.work.calendar.widget.utils.LocaleUtils;
@@ -30,6 +31,8 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
 
+import static java.util.Objects.requireNonNull;
+
 public class MonthCalendarWidget extends AppWidgetProvider {
 
     private static final String SETTINGS_CURRENT_MONTH = "com.google.work.calendar.widget.settings.SELECTED_MONTH";
@@ -38,7 +41,9 @@ public class MonthCalendarWidget extends AppWidgetProvider {
     private static final String ACTION_PREVIOUS_MONTH = "com.google.work.calendar.widget.action.PREVIOUS_MONTH";
     private static final String ACTION_NEXT_MONTH = "com.google.work.calendar.widget.action.NEXT_MONTH";
     private static final String ACTION_SELECT_BRIGADE = "com.google.work.calendar.widget.action.ACTION_SELECT_BRIGADE";
+    private static final String ACTION_SELECT_HOURS_PER_DAY = "com.google.work.calendar.widget.action.ACTION_SELECT_HOURS_PER_DAY";
     private static final String SETTINGS_BRIGADE_SELECTED = "com.google.work.calendar.widget.settings.SETTINGS_BRIGADE_SELECTED";
+    private static final String SETTINGS_HOURS_PER_DAY_SELECTED = "com.google.work.calendar.widget.settings.SETTINGS_HOURS_PER_DAY_SELECTED";
 
     private static int[] weekdaysStartingFromSunday = new int[]{
             Calendar.SUNDAY,
@@ -59,11 +64,27 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             Calendar.SUNDAY,
     };
 
-    private static final Map<Integer, LocalDate> startPoints = ImmutableMap.of(
-            1, LocalDate.of(2019, Month.JULY, 3),
-            2, LocalDate.of(2019, Month.JULY, 11),
-            3, LocalDate.of(2019, Month.JULY, 7),
-            4, LocalDate.of(2019, Month.JULY, 15));
+    private static final Map<Integer, Map<WorkShift.HoursPerDay, LocalDate>> startPoints = ImmutableMap.of(
+            1,
+            ImmutableMap.of(
+                    WorkShift.HoursPerDay.EIGHT_HOURS, LocalDate.of(2019, Month.JULY, 3),
+                    WorkShift.HoursPerDay.TWELVE_HOURS, LocalDate.of(2022, Month.APRIL, 25)
+            ),
+            2,
+            ImmutableMap.of(
+                    WorkShift.HoursPerDay.EIGHT_HOURS, LocalDate.of(2019, Month.JULY, 11),
+                    WorkShift.HoursPerDay.TWELVE_HOURS, LocalDate.of(2022, Month.APRIL, 27)
+            ),
+            3,
+            ImmutableMap.of(
+                    WorkShift.HoursPerDay.EIGHT_HOURS, LocalDate.of(2019, Month.JULY, 7),
+                    WorkShift.HoursPerDay.TWELVE_HOURS, LocalDate.of(2022, Month.APRIL, 26)
+            ),
+            4,
+            ImmutableMap.of(
+                    WorkShift.HoursPerDay.EIGHT_HOURS, LocalDate.of(2019, Month.JULY, 15),
+                    WorkShift.HoursPerDay.TWELVE_HOURS, LocalDate.of(2022, Month.APRIL, 28))
+    );
 
     private static final EventConverter converter = new EventConverter();
 
@@ -111,6 +132,13 @@ public class MonthCalendarWidget extends AppWidgetProvider {
                     1 :
                     Integer.valueOf(StringUtils.defaultString(uri.getQueryParameter("brigade"), "1"));
             settings.edit().putInt(SETTINGS_BRIGADE_SELECTED, brigade).apply();
+            redrawWidgets(context);
+        } else if (ACTION_SELECT_HOURS_PER_DAY.equals(action)) {
+            Uri uri = intent.getData();
+            int hoursPerDay = uri == null ?
+                    8 :
+                    Integer.valueOf(StringUtils.defaultString(uri.getQueryParameter("hoursPerDay"), "8"));
+            settings.edit().putInt(SETTINGS_HOURS_PER_DAY_SELECTED, hoursPerDay).apply();
             redrawWidgets(context);
         }
     }
@@ -169,6 +197,11 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         boolean weekStartsFromMonday = settings.getBoolean(SETTINGS_WEEK_STARTS_FROM_MONDAY, false);
         int[] weekdays = weekStartsFromMonday ? weekdaysStartingFromMonday : weekdaysStartingFromSunday;
 
+        WorkShift.HoursPerDay hoursPerDay = WorkShift.HoursPerDay.fromHours(
+                settings.getInt(SETTINGS_HOURS_PER_DAY_SELECTED,
+                WorkShift.HoursPerDay.TWELVE_HOURS.getHours()));
+        widget.removeAllViews(R.id.hours_per_day);
+
         for (int day : weekdays) {
             RemoteViews dayView = new RemoteViews(context.getPackageName(), R.layout.cell_header);
             dayView.setTextViewText(android.R.id.text1, weekdayNames[day]);
@@ -185,7 +218,8 @@ public class MonthCalendarWidget extends AppWidgetProvider {
         Map<LocalDate, WorkingDay> schedule = getSchedule(
                 selectedMonth + 1,
                 selectedYear,
-                settings.getInt(SETTINGS_BRIGADE_SELECTED, 1));
+                settings.getInt(SETTINGS_BRIGADE_SELECTED, 1),
+                hoursPerDay);
 
         // show days
         for (int week = 0; week < 6; week++) {
@@ -212,7 +246,7 @@ public class MonthCalendarWidget extends AppWidgetProvider {
 
                 String eventName = "";
                 if (workingDay != null) {
-                    eventName = converter.convert(locale, workingDay).getName();
+                    eventName = converter.convert(workingDay).getName();
                 }
 
                 dayCell.setTextViewText(android.R.id.text1,
@@ -257,16 +291,47 @@ public class MonthCalendarWidget extends AppWidgetProvider {
             widget.addView(R.id.brigade, brigadeCell);
         }
 
+        // hours per day
+        boolean is8HoursSelected = hoursPerDay.equals(WorkShift.HoursPerDay.EIGHT_HOURS);
+        widget.removeAllViews(R.id.hours_per_day);
+        RemoteViews hoursPerDayView_8 = new RemoteViews(context.getPackageName(),
+                is8HoursSelected ? R.layout.cell_selected_brigade : R.layout.cell_brigade);
+        hoursPerDayView_8.setTextViewText(android.R.id.text1, String.valueOf(WorkShift.HoursPerDay.EIGHT_HOURS.getHours()));
+        RemoteViews hoursPerDayView_12 = new RemoteViews(context.getPackageName(),
+                !is8HoursSelected ? R.layout.cell_selected_brigade : R.layout.cell_brigade);
+        hoursPerDayView_12.setTextViewText(android.R.id.text1, String.valueOf(WorkShift.HoursPerDay.TWELVE_HOURS.getHours()));
+        widget.addView(R.id.hours_per_day, hoursPerDayView_8);
+        widget.addView(R.id.hours_per_day, hoursPerDayView_12);
+
+
+        Intent intent_8 = new Intent(context, MonthCalendarWidget.class);
+        intent_8.setData(Uri.parse("/?hoursPerDay=" + WorkShift.HoursPerDay.EIGHT_HOURS.getHours()));
+        intent_8.setAction(ACTION_SELECT_HOURS_PER_DAY);
+        hoursPerDayView_8.setOnClickPendingIntent(android.R.id.text1,
+                PendingIntent.getBroadcast(context, 0,
+                        intent_8,
+                        PendingIntent.FLAG_UPDATE_CURRENT));
+
+        Intent intent_12 = new Intent(context, MonthCalendarWidget.class);
+        intent_12.setData(Uri.parse("/?hoursPerDay=" + WorkShift.HoursPerDay.TWELVE_HOURS.getHours()));
+        intent_12.setAction(ACTION_SELECT_HOURS_PER_DAY);
+        hoursPerDayView_12.setOnClickPendingIntent(android.R.id.text1,
+                PendingIntent.getBroadcast(context, 0,
+                        intent_12,
+                        PendingIntent.FLAG_UPDATE_CURRENT));
+
+
         appWidgetManager.updateAppWidget(appWidgetId, widget);
     }
 
-    private Map<LocalDate, WorkingDay> getSchedule(int month, int year, int brigade) {
+    private Map<LocalDate, WorkingDay> getSchedule(int month, int year, int brigade, WorkShift.HoursPerDay hoursPerDay) {
         LocalDate selected = LocalDate.of(year, month, 1);
         LocalDate from = selected.minusMonths(1);
         LocalDate to = selected.plusMonths(2);
         Pair<LocalDate, LocalDate> period = Pair.of(from, to);
 
-        return new WorkingCalendar(startPoints.get(brigade)).buildScheduleFor(period);
+        LocalDate startPoint = requireNonNull(startPoints.get(brigade)).get(hoursPerDay);
+        return new WorkingCalendar(startPoint).buildScheduleFor(period, hoursPerDay);
     }
 
     private static Calendar getDisplayedMonth(SharedPreferences settings) {
